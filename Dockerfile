@@ -144,7 +144,8 @@ RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/python2.conf \
 ENV PYTHON_VERSION=2.7.18 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PATH="/usr/local/bin:${PATH}" \
+    PIP_NO_PYTHON_VERSION_WARNING=1 \
+    PIP_ROOT_USER_ACTION=ignore \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 

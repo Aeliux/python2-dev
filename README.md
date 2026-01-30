@@ -64,6 +64,8 @@ The image includes:
 | `PYTHON_VERSION` | 2.7.18 | Python version |
 | `PIP_NO_CACHE_DIR` | 1 | Disable pip cache |
 | `PIP_DISABLE_PIP_VERSION_CHECK` | 1 | Disable version check |
+| `PIP_NO_PYTHON_VERSION_WARNING` | 1 | Suppress Python version warning |
+| `PIP_ROOT_USER_ACTION` | ignore | Suppress root user warning |
 | `LANG` | C.UTF-8 | Locale setting |
 | `LC_ALL` | C.UTF-8 | Locale setting |
 
