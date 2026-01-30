@@ -89,7 +89,7 @@ docker run --rm -v $(pwd):/workspace python2-dev:2.7.18 \
 
 ## Security Notes
 
-⚠️ **Python 2.7 End of Life**: Python 2.7 reached end-of-life on January 1, 2020. This image is provided for legacy application development only. Consider migrating to Python 3 for new projects.
+⚠️ **Python 2.7 End of Life**: Python 2.7 reached end-of-life on year 2020. This image is provided for legacy application development only. Consider migrating to Python 3 for new projects.
 
 - Minimal runtime dependencies to reduce attack surface
 - No unnecessary build tools in final image

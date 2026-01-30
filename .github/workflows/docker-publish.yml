@@ -5,16 +5,16 @@ on:
     branches:
       - main
     paths:
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - '.github/workflows/docker-publish.yml'
+      - "Dockerfile"
+      - "requirements.txt"
+      - ".github/workflows/docker-publish.yml"
   pull_request:
     branches:
       - main
     paths:
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - '.github/workflows/docker-publish.yml'
+      - "Dockerfile"
+      - "requirements.txt"
+      - ".github/workflows/docker-publish.yml"
   workflow_dispatch:
 
 env:
@@ -28,7 +28,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     strategy:
       matrix:
         distro:
