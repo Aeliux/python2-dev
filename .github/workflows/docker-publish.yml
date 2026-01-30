@@ -11,6 +11,7 @@ on:
 
 env:
   REGISTRY: docker.io
+  USER_NAME: aeliux
   IMAGE_NAME: python2-dev
 
 jobs:
@@ -32,7 +33,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ env.USER_NAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Log in to GitHub Container Registry
@@ -48,7 +49,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
+            ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
@@ -73,6 +74,6 @@ jobs:
       - name: Test image
         if: github.event_name != 'pull_request'
         run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:2.7.18 python2 --version
-          docker run --rm ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:2.7.18 pip --version
-          docker run --rm ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:2.7.18 python2 -c "import sys; print('Python 2.7.18 works correctly')"
+          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18 python2 --version
+          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18 pip --version
+          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18 python2 -c "import sys; print('Python 2.7.18 works correctly')"
