@@ -1,6 +1,6 @@
 # Python 2.7.18 Development Environment
 
-A production-ready Docker image providing Python 2.7.18 development environment built from source on Debian Bookworm.
+A production-ready Docker image providing Python 2.7.18 development environment built from source.
 
 ## Features
 
@@ -44,7 +44,7 @@ make build-no-cache
 
 ## Image Details
 
-- **Base Image**: debian:bookworm-slim
+- **Base Image**: debian slim images
 - **Python Version**: 2.7.18
 - **Included Tools**: git, curl, wget, vim, less, nano
 

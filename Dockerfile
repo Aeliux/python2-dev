@@ -3,11 +3,14 @@
 # Python 2.7.18 Development Environment
 # =============================================================================
 # Multi-stage build for optimized Python 2.7.18 development environment
-# Based on Debian Bookworm with CPython compiled from source
+# Based on Debian with CPython compiled from source
 # =============================================================================
 
+# Build argument for Debian version
+ARG DEBIAN_VERSION=trixie
+
 # Build stage: compile CPython 2.7.18 from source
-FROM debian:bookworm-slim AS builder
+FROM debian:${DEBIAN_VERSION}-slim AS builder
 
 # Set shell options for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -80,16 +83,17 @@ RUN find /usr/local -type f -name '*.pyc' -delete \
 # =============================================================================
 # Runtime stage: minimal development environment
 # =============================================================================
-FROM debian:bookworm-slim AS runtime
+ARG DEBIAN_VERSION=trixie
+FROM debian:${DEBIAN_VERSION}-slim AS runtime
 
 # OCI standard metadata labels
 LABEL org.opencontainers.image.title="Python 2.7.18 Development Environment" \
-    org.opencontainers.image.description="Python 2.7.18 development environment built from source on Debian Bookworm" \
+    org.opencontainers.image.description="Python 2.7.18 development environment built from source on Debian ${DEBIAN_VERSION}" \
     org.opencontainers.image.version="2.7.18" \
     org.opencontainers.image.authors="aeliux" \
     org.opencontainers.image.vendor="aeliux" \
     org.opencontainers.image.licenses="Python-2.0" \
-    org.opencontainers.image.base.name="docker.io/library/debian:bookworm-slim" \
+    org.opencontainers.image.base.name="docker.io/library/debian:${DEBIAN_VERSION}-slim" \
     org.opencontainers.image.created="2026-01-30" \
     org.opencontainers.image.documentation="https://www.python.org/doc/versions/" \
     maintainer="aeliux"
@@ -97,7 +101,7 @@ LABEL org.opencontainers.image.title="Python 2.7.18 Development Environment" \
 # Additional informational labels
 LABEL python.version="2.7.18" \
     python.architecture="x86_64" \
-    debian.version="bookworm"
+    debian.version="${DEBIAN_VERSION}"
 
 # Set shell options
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]

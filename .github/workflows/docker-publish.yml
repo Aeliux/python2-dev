@@ -4,9 +4,17 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - '.github/workflows/docker-publish.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
 
 env:
@@ -20,6 +28,14 @@ jobs:
     permissions:
       contents: read
       packages: write
+    
+    strategy:
+      matrix:
+        distro:
+          - name: trixie
+            is_default: true
+          - name: bookworm
+            is_default: false
 
     steps:
       - name: Checkout repository
@@ -52,28 +68,36 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=2.7.18
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch,suffix=-${{ matrix.distro.name }}
+            type=ref,event=pr,suffix=-${{ matrix.distro.name }}
+            type=semver,pattern={{version}},suffix=-${{ matrix.distro.name }}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.distro.name }}
+            type=raw,value=2.7.18-${{ matrix.distro.name }}
+            type=raw,value=${{ matrix.distro.name }}
+            type=raw,value=2.7.18,enable=${{ matrix.distro.is_default }}
+            type=raw,value=latest,enable=${{ matrix.distro.is_default && github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
+          build-args: |
+            DEBIAN_VERSION=${{ matrix.distro.name }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.distro.name }}
+            type=gha,scope=${{ matrix.distro.name }}
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.distro.name }},mode=max
+            type=gha,scope=${{ matrix.distro.name }},mode=max
+          platforms: linux/amd64
 
       - name: Test image
         if: github.event_name != 'pull_request'
         run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18 python2 --version
-          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18 pip --version
-          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18 python2 -c "import sys; print('Python 2.7.18 works correctly')"
+          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18-${{ matrix.distro.name }} python2 --version
+          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18-${{ matrix.distro.name }} pip --version
+          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18-${{ matrix.distro.name }} python2 -c "import sys; print('Python 2.7.18 works correctly')"
