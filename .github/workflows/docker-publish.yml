@@ -70,7 +70,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,suffix=-${{ matrix.distro.name }}
             type=ref,event=pr,suffix=-${{ matrix.distro.name }}
             type=semver,pattern={{version}},suffix=-${{ matrix.distro.name }}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.distro.name }}
