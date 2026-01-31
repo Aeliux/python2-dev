@@ -1,18 +1,13 @@
 # syntax=docker/dockerfile:1
-# =============================================================================
+
 # Python 2.7.18 Development Environment
-# =============================================================================
+#
 # Multi-stage build for optimized Python 2.7.18 development environment
 # Based on Debian with CPython compiled from source
-# =============================================================================
-
-# Build argument for Debian version
-ARG DEBIAN_VERSION=trixie
 
 # Build stage: compile CPython 2.7.18 from source
+ARG DEBIAN_VERSION=trixie
 FROM debian:${DEBIAN_VERSION}-slim AS builder
-
-# Set shell options for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install build dependencies
@@ -22,7 +17,6 @@ RUN apt-get update \
     build-essential \
     wget \
     ca-certificates \
-    # Library development headers
     libssl-dev \
     zlib1g-dev \
     libbz2-dev \
@@ -33,25 +27,21 @@ RUN apt-get update \
     tk-dev \
     libgdbm-dev \
     liblzma-dev \
-    # Build tools
     pkg-config \
     gcc \
     g++ \
     make \
     && rm -rf /var/lib/apt/lists/*
 
+# Download and verify Python 2.7.18 source code
 WORKDIR /usr/src
-
-# Download and verify CPython 2.7.18 source
-# SHA256: da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814
 RUN wget -q https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz \
     && echo "da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814 Python-2.7.18.tgz" | sha256sum -c - \
     && tar xf Python-2.7.18.tgz \
     && rm Python-2.7.18.tgz
 
+# Build and install Python 2.7.18
 WORKDIR /usr/src/Python-2.7.18
-
-# Configure and compile Python with optimizations
 RUN ./configure \
     --prefix=/usr/local \
     --enable-shared \
@@ -63,39 +53,31 @@ RUN ./configure \
     && make install \
     && ldconfig
 
-# Upgrade pip, setuptools, and wheel
-RUN /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache-dir \
-    --upgrade pip==20.3.4 setuptools==44.1.1 wheel==0.37.1
-
-# Install Python packages from requirements.txt
+# Upgrade pip, setuptools, and wheel, and install additional Python packages
 COPY requirements.txt /tmp/
-RUN /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache-dir \
-    -r /tmp/requirements.txt \
+RUN /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache-dir --upgrade \
+    pip==20.3.4 \
+    setuptools==44.1.1 \
+    wheel==0.37.1 \
+    && /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache-dir -r /tmp/requirements.txt \
     && rm -f /tmp/requirements.txt
 
-# Strip binaries and clean up to reduce size
 RUN find /usr/local -type f -name '*.pyc' -delete \
     && find /usr/local -type f -name '*.pyo' -delete \
     && find /usr/local -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true \
     && find /usr/local -type f -name '*.so*' -exec strip --strip-unneeded {} + 2>/dev/null || true \
     && find /usr/local -type f -executable -exec strip --strip-unneeded {} + 2>/dev/null || true
 
-# =============================================================================
 # Runtime stage: minimal development environment
-# =============================================================================
 ARG DEBIAN_VERSION=trixie
 FROM debian:${DEBIAN_VERSION}-slim AS runtime
-
-# Set shell options
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install runtime dependencies and common development tools
 RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -yq --no-install-recommends \
-    # SSL/TLS support
     ca-certificates \
-    # Runtime libraries
     libssl3 \
     zlib1g \
     libbz2-1.0 \
@@ -105,7 +87,6 @@ RUN apt-get update \
     libncurses6 \
     libgdbm6 \
     liblzma5 \
-    # Development utilities
     git \
     curl \
     nano \
@@ -124,7 +105,7 @@ COPY --from=builder /usr/local /usr/local
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/python2.conf \
     && ldconfig
 
-# Set Python environment variables
+# Set environment variables
 ENV PYTHON_VERSION=2.7.18 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -133,17 +114,10 @@ ENV PYTHON_VERSION=2.7.18 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# Verify Python installation
-RUN python2 --version \
-    && pip --version
-
 # Create a non-root user with id 1000 and add it to sudoers
 RUN useradd -m -u 1000 python \
     && echo 'python ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/python \
     && chmod 0440 /etc/sudoers.d/python
 
-# Change to non-root user
 USER python
-
-# Default command
 CMD ["/bin/bash"]

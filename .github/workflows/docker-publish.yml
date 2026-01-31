@@ -73,6 +73,18 @@ jobs:
           images: |
             ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.title=Python 2.7.18 Development Environment
+            org.opencontainers.image.description=Python 2.7.18 development environment built from source on Debian ${{ matrix.distro.name }}
+            org.opencontainers.image.authors=aeliux
+            org.opencontainers.image.vendor=aeliux
+            org.opencontainers.image.licenses=Python-2.0
+            org.opencontainers.image.base.name=docker.io/library/debian:${{ matrix.distro.name }}-slim
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+            maintainer=aeliux
+            python.version=2.7.18
+            python.architecture=x86_64
+            debian.version=${{ matrix.distro.name }}
           tags: |
             type=ref,event=pr,suffix=-${{ matrix.distro.name }}
             type=semver,pattern={{version}},suffix=-${{ matrix.distro.name }}
@@ -96,27 +108,8 @@ jobs:
           provenance: mode=max
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}
-          annotations: |
-            ${{ steps.meta.outputs.annotations }}
-          labels: |
-            ${{ steps.meta.outputs.labels }}
-            org.opencontainers.image.title=Python 2.7.18 Development Environment
-            org.opencontainers.image.description=Python 2.7.18 development environment built from source on Debian ${{ matrix.distro.name }}
-            org.opencontainers.image.version=2.7.18
-            org.opencontainers.image.authors=aeliux
-            org.opencontainers.image.vendor=aeliux
-            org.opencontainers.image.licenses=Python-2.0
-            org.opencontainers.image.base.name=docker.io/library/debian:${{ matrix.distro.name }}-slim
-            org.opencontainers.image.documentation=https://www.python.org/doc/versions/
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.url=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.ref.name=${{ github.ref_name }}
-            maintainer=aeliux
-            python.version=2.7.18
-            python.architecture=x86_64
-            debian.version=${{ matrix.distro.name }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: |
             type=gha,scope=${{ matrix.distro.name }}
           cache-to: |
