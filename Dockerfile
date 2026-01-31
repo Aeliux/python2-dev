@@ -113,6 +113,7 @@ RUN apt-get update \
     vim-tiny \
     less \
     procps \
+    sudo \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -135,6 +136,14 @@ ENV PYTHON_VERSION=2.7.18 \
 # Verify Python installation
 RUN python2 --version \
     && pip --version
+
+# Create a non-root user with id 1000 and add it to sudoers
+RUN useradd -m -u 1000 python \
+    && echo 'python ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/python \
+    && chmod 0440 /etc/sudoers.d/python
+
+# Change to non-root user
+USER python
 
 # Default command
 CMD ["/bin/bash"]
