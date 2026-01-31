@@ -15,6 +15,8 @@ on:
       - "Dockerfile"
       - "requirements.txt"
       - ".github/workflows/docker-publish.yml"
+  schedule:
+    - cron: "0 0 */14 * *" # Every 2 weeks
   workflow_dispatch:
 
 env:
@@ -41,7 +43,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -73,14 +77,16 @@ jobs:
             type=ref,event=pr,suffix=-${{ matrix.distro.name }}
             type=semver,pattern={{version}},suffix=-${{ matrix.distro.name }}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.distro.name }}
+            type=raw,value=2.7.18-${{ matrix.distro.name }}-{{date 'YYYYMMDD'}}
             type=raw,value=2.7.18-${{ matrix.distro.name }}
             type=raw,value=${{ matrix.distro.name }}
             type=raw,value=2.7.18,enable=${{ matrix.distro.is_default }}
+            type=raw,value=2.7.18-{{date 'YYYYMMDD'}},enable=${{ matrix.distro.is_default }}
             type=raw,value=latest,enable=${{ matrix.distro.is_default && github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         id: push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -88,18 +94,19 @@ jobs:
             DEBIAN_VERSION=${{ matrix.distro.name }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
           cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.distro.name }}
             type=gha,scope=${{ matrix.distro.name }}
           cache-to: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.distro.name }},mode=max
             type=gha,scope=${{ matrix.distro.name }},mode=max
           platforms: linux/amd64
 
       - name: Generate Docker Hub attestation
         if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
@@ -107,7 +114,7 @@ jobs:
 
       - name: Generate GHCR attestation
         if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}

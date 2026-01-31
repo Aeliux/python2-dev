@@ -94,7 +94,6 @@ LABEL org.opencontainers.image.title="Python 2.7.18 Development Environment" \
     org.opencontainers.image.vendor="aeliux" \
     org.opencontainers.image.licenses="Python-2.0" \
     org.opencontainers.image.base.name="docker.io/library/debian:${DEBIAN_VERSION}-slim" \
-    org.opencontainers.image.created="2026-01-30" \
     org.opencontainers.image.documentation="https://www.python.org/doc/versions/" \
     maintainer="aeliux"
 
