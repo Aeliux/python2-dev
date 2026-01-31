@@ -86,22 +86,6 @@ RUN find /usr/local -type f -name '*.pyc' -delete \
 ARG DEBIAN_VERSION=trixie
 FROM debian:${DEBIAN_VERSION}-slim AS runtime
 
-# OCI standard metadata labels
-LABEL org.opencontainers.image.title="Python 2.7.18 Development Environment" \
-    org.opencontainers.image.description="Python 2.7.18 development environment built from source on Debian ${DEBIAN_VERSION}" \
-    org.opencontainers.image.version="2.7.18" \
-    org.opencontainers.image.authors="aeliux" \
-    org.opencontainers.image.vendor="aeliux" \
-    org.opencontainers.image.licenses="Python-2.0" \
-    org.opencontainers.image.base.name="docker.io/library/debian:${DEBIAN_VERSION}-slim" \
-    org.opencontainers.image.documentation="https://www.python.org/doc/versions/" \
-    maintainer="aeliux"
-
-# Additional informational labels
-LABEL python.version="2.7.18" \
-    python.architecture="x86_64" \
-    debian.version="${DEBIAN_VERSION}"
-
 # Set shell options
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
