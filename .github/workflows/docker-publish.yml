@@ -93,7 +93,11 @@ jobs:
           build-args: |
             DEBIAN_VERSION=${{ matrix.distro.name }}
           push: ${{ github.event_name != 'pull_request' }}
+          provenance: mode=max
+          sbom: true
           tags: ${{ steps.meta.outputs.tags }}
+          annotations: |
+            ${{ steps.meta.outputs.annotations }}
           labels: |
             ${{ steps.meta.outputs.labels }}
             org.opencontainers.image.created=${{ steps.meta.outputs.created }}
@@ -103,26 +107,3 @@ jobs:
           cache-to: |
             type=gha,scope=${{ matrix.distro.name }},mode=max
           platforms: linux/amd64
-
-      - name: Generate Docker Hub attestation
-        if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-
-      - name: Generate GHCR attestation
-        if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-
-      - name: Test image
-        if: github.event_name != 'pull_request'
-        run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18-${{ matrix.distro.name }} python2 --version
-          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18-${{ matrix.distro.name }} pip --version
-          docker run --rm ${{ env.REGISTRY }}/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:2.7.18-${{ matrix.distro.name }} python2 -c "import sys; print('Python 2.7.18 works correctly')"
