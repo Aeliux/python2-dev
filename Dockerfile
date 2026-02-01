@@ -24,8 +24,6 @@ RUN apt-get update \
     libsqlite3-dev \
     libffi-dev \
     libncurses5-dev \
-    tk-dev \
-    libgdbm-dev \
     liblzma-dev \
     pkg-config \
     gcc \
@@ -48,6 +46,8 @@ RUN ./configure \
     --enable-unicode=ucs4 \
     --with-ensurepip=install \
     --enable-optimizations \
+    --without-tk \
+    --disable-test-modules \
     LDFLAGS="-Wl,-rpath=/usr/local/lib" \
     && make -j"$(nproc)" \
     && make install \
@@ -62,11 +62,47 @@ RUN /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache
     && /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache-dir -r /tmp/requirements.txt \
     && rm -f /tmp/requirements.txt
 
-RUN find /usr/local -type f -name '*.pyc' -delete \
-    && find /usr/local -type f -name '*.pyo' -delete \
-    && find /usr/local -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true \
-    && find /usr/local -type f -name '*.so*' -exec strip --strip-unneeded {} + 2>/dev/null || true \
-    && find /usr/local -type f -executable -exec strip --strip-unneeded {} + 2>/dev/null || true
+# Download and verify Python 3.12 source code
+WORKDIR /usr/src
+RUN wget -q https://www.python.org/ftp/python/3.12.8/Python-3.12.8.tgz \
+    && echo "5cbdb4749c770cebf94618ad0112a4082409712b99bf1fb20a5e5bf9ed24e0d3 Python-3.12.8.tgz" | sha256sum -c - \
+    && tar xf Python-3.12.8.tgz \
+    && rm Python-3.12.8.tgz
+
+# Build and install Python 3.12
+WORKDIR /usr/src/Python-3.12.8
+RUN ./configure \
+    --prefix=/opt/python3 \
+    --enable-shared \
+    --enable-optimizations \
+    --with-lto \
+    --with-computed-gotos \
+    --with-ensurepip=install \
+    --without-tkinter \
+    --disable-test-modules \
+    LDFLAGS="-Wl,-rpath=/opt/python3/lib" \
+    && make -j"$(nproc)" \
+    && make install \
+    && ldconfig
+
+# Install Python 3 requirements
+COPY requirements3.txt /tmp/
+RUN /opt/python3/bin/python3 -m pip install --disable-pip-version-check --no-cache-dir --upgrade \
+    pip \
+    setuptools \
+    wheel \
+    && /opt/python3/bin/python3 -m pip install --disable-pip-version-check --no-cache-dir -r /tmp/requirements3.txt \
+    && rm -f /tmp/requirements3.txt
+
+# Optimize and cleanup all Python installations
+RUN find /usr/local /opt/python3 -type f -name '*.pyc' -delete \
+    && find /usr/local /opt/python3 -type f -name '*.pyo' -delete \
+    && find /usr/local /opt/python3 -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true \
+    && find /usr/local /opt/python3 -type d -name 'test' -exec rm -rf {} + 2>/dev/null || true \
+    && find /usr/local /opt/python3 -type d -name 'tests' -exec rm -rf {} + 2>/dev/null || true \
+    && find /usr/local /opt/python3 -type f -name '*.so*' -exec strip --strip-unneeded {} + 2>/dev/null || true \
+    && find /usr/local /opt/python3 -type f -executable -exec strip --strip-unneeded {} + 2>/dev/null || true \
+    && rm -rf /usr/src/*
 
 # Runtime stage: minimal development environment
 ARG DEBIAN_VERSION=trixie
@@ -78,14 +114,13 @@ RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -yq --no-install-recommends \
     ca-certificates \
-    libssl3 \
+    libssl3t64 \
     zlib1g \
     libbz2-1.0 \
-    libreadline8 \
+    libreadline8t64 \
     libsqlite3-0 \
     libffi8 \
     libncurses6 \
-    libgdbm6 \
     liblzma5 \
     git \
     curl \
@@ -95,27 +130,29 @@ RUN apt-get update \
     less \
     procps \
     sudo \
-    python3 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy Python installation from builder
+# Copy Python installations from builder
 COPY --from=builder /usr/local /usr/local
+COPY --from=builder /opt/python3 /opt/python3
 
 # Configure dynamic linker for shared libraries
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/python2.conf \
+    && echo '/opt/python3/lib' > /etc/ld.so.conf.d/python3.conf \
     && ldconfig
 
-COPY requirements3.txt /tmp/
-RUN /usr/bin/python3 -m pip install --disable-pip-version-check --no-cache-dir --upgrade \
-    pip \
-    setuptools \
-    wheel \
-    && /usr/bin/python3 -m pip install --no-cache-dir -r /tmp/requirements3.txt \
-    && rm -f /tmp/requirements3.txt
+# Create symlinks for python commands
+RUN ln -sf /usr/local/bin/python2 /usr/local/bin/python \
+    && ln -sf /usr/local/bin/python2.7 /usr/local/bin/python2 \
+    && ln -sf /opt/python3/bin/python3 /usr/local/bin/python3 \
+    && ln -sf /opt/python3/bin/python3.12 /usr/local/bin/python3.12 \
+    && ln -sf /opt/python3/bin/pip3 /usr/local/bin/pip3
 
 # Set environment variables
 ENV PYTHON_VERSION=2.7.18 \
+    PYTHON3_VERSION=3.12.8 \
+    PATH="/opt/python3/bin:${PATH}" \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_PYTHON_VERSION_WARNING=1 \
