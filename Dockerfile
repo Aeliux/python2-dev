@@ -34,7 +34,7 @@ RUN apt-get update \
 # Download and verify Python 2.7.18 source code
 WORKDIR /usr/src
 RUN wget -q https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz \
-    && echo "da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814 Python-2.7.18.tgz" | sha256sum -c - \
+    && echo "da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814 *Python-2.7.18.tgz" | sha256sum -c - \
     && tar xf Python-2.7.18.tgz \
     && rm Python-2.7.18.tgz
 
@@ -64,13 +64,13 @@ RUN /usr/local/bin/python2 -m pip install --disable-pip-version-check --no-cache
 
 # Download and verify Python 3.12 source code
 WORKDIR /usr/src
-RUN wget -q https://www.python.org/ftp/python/3.12.8/Python-3.12.8.tgz \
-    && echo "5cbdb4749c770cebf94618ad0112a4082409712b99bf1fb20a5e5bf9ed24e0d3 Python-3.12.8.tgz" | sha256sum -c - \
-    && tar xf Python-3.12.8.tgz \
-    && rm Python-3.12.8.tgz
+RUN wget -q https://www.python.org/ftp/python/3.12.12/Python-3.12.12.tgz \
+    && echo "487c908ddf4097a1b9ba859f25fe46d22ccaabfb335880faac305ac62bffb79b *Python-3.12.12.tgz" | sha256sum -c - \
+    && tar xf Python-3.12.12.tgz \
+    && rm Python-3.12.12.tgz
 
 # Build and install Python 3.12
-WORKDIR /usr/src/Python-3.12.8
+WORKDIR /usr/src/Python-3.12.12
 RUN ./configure \
     --prefix=/opt/python3 \
     --enable-shared \
@@ -114,10 +114,10 @@ RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -yq --no-install-recommends \
     ca-certificates \
-    libssl3t64 \
+    libssl3 \
     zlib1g \
     libbz2-1.0 \
-    libreadline8t64 \
+    libreadline8 \
     libsqlite3-0 \
     libffi8 \
     libncurses6 \
@@ -151,7 +151,7 @@ RUN ln -sf /usr/local/bin/python2 /usr/local/bin/python \
 
 # Set environment variables
 ENV PYTHON_VERSION=2.7.18 \
-    PYTHON3_VERSION=3.12.8 \
+    PYTHON3_VERSION=3.12.12 \
     PATH="/opt/python3/bin:${PATH}" \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
