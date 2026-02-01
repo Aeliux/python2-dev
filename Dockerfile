@@ -95,6 +95,7 @@ RUN apt-get update \
     less \
     procps \
     sudo \
+    python3 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -104,6 +105,14 @@ COPY --from=builder /usr/local /usr/local
 # Configure dynamic linker for shared libraries
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/python2.conf \
     && ldconfig
+
+COPY requirements3.txt /tmp/
+RUN /usr/bin/python3 -m pip install --disable-pip-version-check --no-cache-dir --upgrade \
+    pip \
+    setuptools \
+    wheel \
+    && /usr/bin/python3 -m pip install --no-cache-dir -r /tmp/requirements3.txt \
+    && rm -f /tmp/requirements3.txt
 
 # Set environment variables
 ENV PYTHON_VERSION=2.7.18 \
@@ -120,4 +129,8 @@ RUN useradd -m -u 1000 python \
     && chmod 0440 /etc/sudoers.d/python
 
 USER python
+
+# Enable python2 support for mypy
+COPY mypy.ini /home/python/.mypy.ini
+
 CMD ["/bin/bash"]
